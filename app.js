@@ -32,6 +32,7 @@
   ];
 
   const BLOCO_ORDEM = ["01", "23", "45"];
+  const BLOCO_LABELS = { "01": "Organização", "23": "Precificação", "45": "Estratégia" };
 
   const PACOTES = {
     diagnostico: {
@@ -342,6 +343,96 @@
   // ============================================================
   // TELA 4: RESULTADO
   // ============================================================
+
+  // gráfico radar (3 eixos) desenhado como SVG puro, sem dependências
+  function buildRadarSVG(scores) {
+    const cx = 120;
+    const cy = 116;
+    const r = 74;
+    const angles = [-90, 30, 150].map((d) => (d * Math.PI) / 180);
+    const valores = [scores.a01, scores.a23, scores.a45];
+
+    const ponto = (angle, fracao) => {
+      const x = cx + r * fracao * Math.cos(angle);
+      const y = cy + r * fracao * Math.sin(angle);
+      return [Number(x.toFixed(1)), Number(y.toFixed(1))];
+    };
+
+    const grids = [0.25, 0.5, 0.75, 1]
+      .map((f) => angles.map((a) => ponto(a, f).join(",")).join(" "))
+      .map((pts) => `<polygon points="${pts}" class="radar-grid" />`)
+      .join("");
+
+    const axisLines = angles
+      .map((a) => {
+        const [x, y] = ponto(a, 1);
+        return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" class="radar-axis" />`;
+      })
+      .join("");
+
+    // vértice mínimo visível mesmo quando o score é 0
+    const fracoes = valores.map((v) => Math.max(v, 0.04));
+    const dataPoints = angles.map((a, i) => ponto(a, fracoes[i]).join(",")).join(" ");
+
+    const dots = angles
+      .map((a, i) => {
+        const [x, y] = ponto(a, fracoes[i]);
+        return `<circle cx="${x}" cy="${y}" r="4.5" class="radar-dot" />`;
+      })
+      .join("");
+
+    return `
+      <svg viewBox="0 0 240 200" class="result-radar" role="img" aria-label="Gráfico com os três blocos avaliados">
+        ${grids}
+        ${axisLines}
+        <polygon points="${dataPoints}" class="radar-data" />
+        ${dots}
+      </svg>
+    `;
+  }
+
+  function renderLegend(scores) {
+    const legendEl = document.getElementById("radarLegend");
+    legendEl.innerHTML = BLOCO_ORDEM.map((blocoId) => {
+      const chave = blocoId === "01" ? "a01" : blocoId === "23" ? "a23" : "a45";
+      const pct = Math.round(scores[chave] * 100);
+      return `
+        <div class="radar-legend-item">
+          <span class="legend-value">${pct}%</span>
+          <span class="legend-label">${BLOCO_LABELS[blocoId]}</span>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderSelo(pacoteKey) {
+    const sealEl = document.getElementById("resultSeal");
+    const sealIcon = document.getElementById("sealIcon");
+    const sealText = document.getElementById("sealText");
+
+    sealEl.classList.remove("seal-alert", "seal-positive");
+
+    if (pacoteKey === "completo") {
+      sealEl.classList.add("seal-alert");
+      sealIcon.textContent = "!";
+      sealText.innerHTML = "A dor está <strong>espalhada nas 3 frentes</strong> — nenhum ajuste isolado resolve.";
+      return;
+    }
+
+    if (pacoteKey === "gfeFixoManutencao") {
+      sealEl.classList.add("seal-positive");
+      sealIcon.textContent = "✓";
+      sealText.innerHTML = "Nenhuma dor predominante — <strong>base financeira sólida</strong>.";
+      return;
+    }
+
+    const blocoPorPacote = { diagnostico: "01", estruturacao: "23", gfeFixo: "45" };
+    const blocoId = blocoPorPacote[pacoteKey];
+    sealEl.classList.add("seal-alert");
+    sealIcon.textContent = "!";
+    sealText.innerHTML = `Maior dor identificada: <strong>${BLOCO_LABELS[blocoId]}</strong>`;
+  }
+
   function renderResultado(pacoteKey, scores) {
     const pacote = PACOTES[pacoteKey];
 
@@ -349,25 +440,9 @@
     document.getElementById("resultDescricao").textContent = pacote.descricao;
     document.getElementById("resultPreco").textContent = pacote.preco;
 
-    const blocos = [
-      { label: "Organização (base)", value: scores.a01 },
-      { label: "Precificação e caixa", value: scores.a23 },
-      { label: "Estratégia e rotina", value: scores.a45 },
-    ];
-
-    const scoresEl = document.getElementById("resultScores");
-    scoresEl.innerHTML = "";
-    blocos.forEach((b) => {
-      const pct = Math.round(b.value * 100);
-      const row = document.createElement("div");
-      row.className = "score-row";
-      row.innerHTML = `
-        <span class="score-label">${b.label}</span>
-        <span class="score-track"><span class="score-fill" style="width:${pct}%"></span></span>
-        <span class="score-value">${pct}%</span>
-      `;
-      scoresEl.appendChild(row);
-    });
+    renderSelo(pacoteKey);
+    document.getElementById("resultRadar").innerHTML = buildRadarSVG(scores);
+    renderLegend(scores);
 
     const btnWhats = document.getElementById("btnWhats");
     const mensagem = CONFIG.WHATSAPP_MENSAGEM
