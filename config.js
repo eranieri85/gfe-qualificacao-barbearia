@@ -11,5 +11,5 @@ const CONFIG = {
   // URL do Google Apps Script Web App (webhook) que recebe os leads.
   // Deixe em branco ("") para desativar o envio remoto — o lead ainda é salvo no localStorage do navegador.
   // Veja instruções de deploy em apps-script/README.md
-  LEAD_WEBHOOK_URL: "",
+  LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/AKfycbydlx60fdokfOPQuoSANxjmNQnsCgQVfA06Uugoh_vbqmqKcoEznK_VSESFX75fBQcT/exec",
 };
