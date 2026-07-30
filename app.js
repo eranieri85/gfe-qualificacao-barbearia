@@ -66,7 +66,7 @@
   // ESTADO
   // ============================================================
   const state = {
-    lead: { nome: "", whatsapp: "", barbearia: "" },
+    lead: { nome: "", whatsapp: "", barbearia: "", cadeiras: "" },
     respostas: {}, // { [questionId]: valor }
     quizIndex: 0,
   };
@@ -99,6 +99,7 @@
   const leadNome = document.getElementById("leadNome");
   const leadWhats = document.getElementById("leadWhats");
   const leadBarbearia = document.getElementById("leadBarbearia");
+  const leadCadeiras = document.getElementById("leadCadeiras");
 
   function setFieldError(input, errId, message) {
     document.getElementById(errId).textContent = message || "";
@@ -136,6 +137,7 @@
     state.lead.nome = leadNome.value.trim();
     state.lead.whatsapp = leadWhats.value.trim();
     state.lead.barbearia = leadBarbearia.value.trim();
+    state.lead.cadeiras = leadCadeiras.value.trim();
 
     state.quizIndex = 0;
     showScreen("quiz");
