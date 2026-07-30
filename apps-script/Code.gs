@@ -75,56 +75,67 @@ function registrarLead(ss, data) {
  * Grava/atualiza o progresso de uma sessão na aba "Funil" (cria a aba se não existir).
  * Uma linha por sessão (sessionId), atualizada a cada pergunta respondida — assim dá
  * pra ver, mesmo sem a pessoa terminar, até onde ela foi e como entrar em contato.
+ *
+ * Como várias requisições da mesma sessão podem chegar quase juntas (uma por pergunta
+ * respondida), usamos um lock pra serializar a leitura+escrita e evitar corrida: sem
+ * isso, duas execuções concorrentes podiam achar que a linha da sessão "ainda não
+ * existe" ao mesmo tempo e criar duplicatas, ou uma sobrescrever a atualização da outra.
  */
 function registrarFunil(ss, data) {
-  var sheet = ss.getSheetByName("Funil");
-  if (!sheet) {
-    sheet = ss.insertSheet("Funil");
-    sheet.appendRow([
-      "Session ID", "Nome", "WhatsApp", "Início", "Última atualização",
-      "Última pergunta respondida", "Total de perguntas", "Completou"
-    ]);
-  }
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var sheet = ss.getSheetByName("Funil");
+    if (!sheet) {
+      sheet = ss.insertSheet("Funil");
+      sheet.appendRow([
+        "Session ID", "Nome", "WhatsApp", "Início", "Última atualização",
+        "Última pergunta respondida", "Total de perguntas", "Completou"
+      ]);
+    }
 
-  var sessionId = data.sessionId || "";
-  var lastRow = sheet.getLastRow();
-  var rowIndex = -1;
+    var sessionId = data.sessionId || "";
+    var lastRow = sheet.getLastRow();
+    var rowIndex = -1;
 
-  if (lastRow > 1 && sessionId) {
-    var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-    for (var i = 0; i < ids.length; i++) {
-      if (ids[i][0] === sessionId) {
-        rowIndex = i + 2;
-        break;
+    if (lastRow > 1 && sessionId) {
+      var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (var i = 0; i < ids.length; i++) {
+        if (ids[i][0] === sessionId) {
+          rowIndex = i + 2;
+          break;
+        }
       }
     }
-  }
 
-  var agora = new Date().toISOString();
-  var completouTexto = data.completou ? "Sim" : "Não";
+    var agora = new Date().toISOString();
+    var completouTexto = data.completou ? "Sim" : "Não";
 
-  if (rowIndex === -1) {
-    sheet.appendRow([
-      sessionId,
-      data.nome || "",
-      data.whatsapp || "",
-      agora,
-      agora,
-      data.perguntaAtual !== undefined ? data.perguntaAtual : "",
-      data.totalPerguntas || "",
-      completouTexto,
-    ]);
-  } else {
-    var inicioOriginal = sheet.getRange(rowIndex, 4).getValue() || agora;
-    sheet.getRange(rowIndex, 1, 1, 8).setValues([[
-      sessionId,
-      data.nome || "",
-      data.whatsapp || "",
-      inicioOriginal,
-      agora,
-      data.perguntaAtual !== undefined ? data.perguntaAtual : "",
-      data.totalPerguntas || "",
-      completouTexto,
-    ]]);
+    if (rowIndex === -1) {
+      sheet.appendRow([
+        sessionId,
+        data.nome || "",
+        data.whatsapp || "",
+        agora,
+        agora,
+        data.perguntaAtual !== undefined ? data.perguntaAtual : "",
+        data.totalPerguntas || "",
+        completouTexto,
+      ]);
+    } else {
+      var inicioOriginal = sheet.getRange(rowIndex, 4).getValue() || agora;
+      sheet.getRange(rowIndex, 1, 1, 8).setValues([[
+        sessionId,
+        data.nome || "",
+        data.whatsapp || "",
+        inicioOriginal,
+        agora,
+        data.perguntaAtual !== undefined ? data.perguntaAtual : "",
+        data.totalPerguntas || "",
+        completouTexto,
+      ]]);
+    }
+  } finally {
+    lock.releaseLock();
   }
 }
