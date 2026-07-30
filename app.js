@@ -395,27 +395,37 @@
     }).catch((err) => console.warn("Falha ao enviar evento de funil:", err));
   }
 
-  // Envia o progresso atual via sendBeacon quando a pessoa sai da página
-  // (troca de aba, fecha, navega pra fora) sem terminar o questionário.
-  // sendBeacon é feito pra esse momento exato — o navegador garante o
-  // envio mesmo com a página sendo descartada, ao contrário de fetch.
+  // Envia o progresso atual quando a pessoa sai da página (troca de aba,
+  // fecha, navega pra fora) sem terminar o questionário.
+  //
+  // Usa fetch com keepalive (não sendBeacon): URLs de Web App do Apps
+  // Script sempre respondem com um redirect (302) antes de executar, e
+  // sendBeacon não segue redirecionamento — a requisição era descartada
+  // no meio do caminho. fetch já segue redirect normalmente (é como o
+  // início/conclusão da sessão funcionam), e keepalive garante que a
+  // requisição sobrevive ao descarte da página, papel que o sendBeacon
+  // cumpriria em um endpoint sem redirect.
   function enviarFunilAbandonoBeacon() {
     if (funilFinalizado) return;
     if (!state.sessionId) return; // ainda não chegou a iniciar o questionário
-    if (!(window.CONFIG && CONFIG.LEAD_WEBHOOK_URL && navigator.sendBeacon)) return;
+    if (!(window.CONFIG && CONFIG.LEAD_WEBHOOK_URL)) return;
 
-    const payload = {
-      evento: "funil",
-      token: CONFIG.LEAD_SECRET,
-      sessionId: state.sessionId,
-      nome: state.lead.nome,
-      whatsapp: state.lead.whatsapp,
-      perguntaAtual: state.quizIndex,
-      totalPerguntas: QUESTIONS.length,
-      completou: false,
-    };
-    const blob = new Blob([JSON.stringify(payload)], { type: "text/plain;charset=utf-8" });
-    navigator.sendBeacon(CONFIG.LEAD_WEBHOOK_URL, blob);
+    fetch(CONFIG.LEAD_WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      keepalive: true,
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        evento: "funil",
+        token: CONFIG.LEAD_SECRET,
+        sessionId: state.sessionId,
+        nome: state.lead.nome,
+        whatsapp: state.lead.whatsapp,
+        perguntaAtual: state.quizIndex,
+        totalPerguntas: QUESTIONS.length,
+        completou: false,
+      }),
+    }).catch((err) => console.warn("Falha ao enviar evento de abandono:", err));
   }
 
   document.addEventListener("visibilitychange", () => {
