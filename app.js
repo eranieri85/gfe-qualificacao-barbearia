@@ -77,6 +77,10 @@
     return "sess-" + Date.now() + "-" + Math.random().toString(36).slice(2);
   }
 
+  // true assim que a sessão termina (completou) — evita que o beacon de
+  // "saiu da página" dispare de novo por cima de uma sessão já concluída.
+  let funilFinalizado = false;
+
   // ============================================================
   // NAVEGAÇÃO DE TELAS
   // ============================================================
@@ -156,6 +160,7 @@
 
     state.sessionId = gerarSessionId();
     state.quizIndex = 0;
+    funilFinalizado = false;
     showScreen("quiz");
     renderQuestion();
     enviarFunil(0, false);
@@ -252,17 +257,16 @@
   function selectAnswer(questionId, value) {
     state.respostas[questionId] = value;
     const total = QUESTIONS.length;
-    const perguntaRespondida = state.quizIndex + 1; // posição (1-based) da pergunta recém respondida
 
     if (state.quizIndex < total - 1) {
       state.quizIndex += 1;
       renderQuestion("next");
-      enviarFunil(perguntaRespondida, false);
     } else {
       BLOCO_ORDEM.forEach((blocoId) => {
         document.querySelector(`[data-bloco-fill="${blocoId}"]`).style.width = "100%";
       });
-      enviarFunil(perguntaRespondida, true);
+      funilFinalizado = true;
+      enviarFunil(total, true);
       finalizarQuestionario();
     }
   }
@@ -365,6 +369,11 @@
   // ============================================================
   // ANALYTICS DE FUNIL — registra até onde cada sessão avançou no
   // questionário, mesmo que a pessoa nunca chegue ao resultado.
+  //
+  // Só 2-3 chamadas por sessão (início, opcionalmente abandono, conclusão) —
+  // de propósito. Mandar uma chamada a cada pergunta respondida sobrecarrega
+  // o Apps Script (execuções concorrentes disputando o mesmo lock) e faz
+  // requisições serem descartadas silenciosamente sob contenção.
   // ============================================================
   function enviarFunil(perguntaAtual, completou) {
     if (!(window.CONFIG && CONFIG.LEAD_WEBHOOK_URL)) return;
@@ -385,6 +394,34 @@
       }),
     }).catch((err) => console.warn("Falha ao enviar evento de funil:", err));
   }
+
+  // Envia o progresso atual via sendBeacon quando a pessoa sai da página
+  // (troca de aba, fecha, navega pra fora) sem terminar o questionário.
+  // sendBeacon é feito pra esse momento exato — o navegador garante o
+  // envio mesmo com a página sendo descartada, ao contrário de fetch.
+  function enviarFunilAbandonoBeacon() {
+    if (funilFinalizado) return;
+    if (!state.sessionId) return; // ainda não chegou a iniciar o questionário
+    if (!(window.CONFIG && CONFIG.LEAD_WEBHOOK_URL && navigator.sendBeacon)) return;
+
+    const payload = {
+      evento: "funil",
+      token: CONFIG.LEAD_SECRET,
+      sessionId: state.sessionId,
+      nome: state.lead.nome,
+      whatsapp: state.lead.whatsapp,
+      perguntaAtual: state.quizIndex,
+      totalPerguntas: QUESTIONS.length,
+      completou: false,
+    };
+    const blob = new Blob([JSON.stringify(payload)], { type: "text/plain;charset=utf-8" });
+    navigator.sendBeacon(CONFIG.LEAD_WEBHOOK_URL, blob);
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") enviarFunilAbandonoBeacon();
+  });
+  window.addEventListener("pagehide", enviarFunilAbandonoBeacon);
 
   // ============================================================
   // TELA 4: RESULTADO
