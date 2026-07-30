@@ -3,8 +3,7 @@
 // ============================================================
 const CONFIG = {
   // Número de WhatsApp que recebe o CTA final. Formato: DDI+DDD+número, só dígitos.
-  // TODO: trocar pelo número real antes de divulgar o link.
-  WHATSAPP_NUMERO: "5500000000000",
+  WHATSAPP_NUMERO: "5524992534295",
 
   // Mensagem pré-preenchida enviada no clique do CTA. {{PACOTE}} e {{NOME}} são substituídos automaticamente.
   WHATSAPP_MENSAGEM: "Olá! Fiz o diagnóstico financeiro da minha barbearia e o resultado indicou o pacote \"{{PACOTE}}\". Meu nome é {{NOME}} e gostaria de agendar uma conversa.",
