@@ -1,7 +1,7 @@
 // ============================================================
 // CONFIGURAÇÃO — edite apenas este arquivo para customizar o app
 // ============================================================
-const CONFIG = {
+window.CONFIG = {
   // Número de WhatsApp que recebe o CTA final. Formato: DDI+DDD+número, só dígitos.
   WHATSAPP_NUMERO: "5524992534295",
 
