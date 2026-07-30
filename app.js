@@ -346,47 +346,58 @@
 
   // gráfico radar (3 eixos) desenhado como SVG puro, sem dependências
   function buildRadarSVG(scores) {
-    const cx = 120;
-    const cy = 116;
-    const r = 74;
+    const cx = 160;
+    const cy = 132;
+    const r = 62;
+    const labelR = r + 30;
     const angles = [-90, 30, 150].map((d) => (d * Math.PI) / 180);
     const valores = [scores.a01, scores.a23, scores.a45];
+    const labels = [BLOCO_LABELS["01"], BLOCO_LABELS["23"], BLOCO_LABELS["45"]];
+    const anchors = ["middle", "start", "end"];
 
-    const ponto = (angle, fracao) => {
-      const x = cx + r * fracao * Math.cos(angle);
-      const y = cy + r * fracao * Math.sin(angle);
+    const ponto = (angle, fracao, raio) => {
+      const x = cx + raio * fracao * Math.cos(angle);
+      const y = cy + raio * fracao * Math.sin(angle);
       return [Number(x.toFixed(1)), Number(y.toFixed(1))];
     };
 
     const grids = [0.25, 0.5, 0.75, 1]
-      .map((f) => angles.map((a) => ponto(a, f).join(",")).join(" "))
+      .map((f) => angles.map((a) => ponto(a, f, r).join(",")).join(" "))
       .map((pts) => `<polygon points="${pts}" class="radar-grid" />`)
       .join("");
 
     const axisLines = angles
       .map((a) => {
-        const [x, y] = ponto(a, 1);
+        const [x, y] = ponto(a, 1, r);
         return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" class="radar-axis" />`;
       })
       .join("");
 
     // vértice mínimo visível mesmo quando o score é 0
     const fracoes = valores.map((v) => Math.max(v, 0.04));
-    const dataPoints = angles.map((a, i) => ponto(a, fracoes[i]).join(",")).join(" ");
+    const dataPoints = angles.map((a, i) => ponto(a, fracoes[i], r).join(",")).join(" ");
 
     const dots = angles
       .map((a, i) => {
-        const [x, y] = ponto(a, fracoes[i]);
+        const [x, y] = ponto(a, fracoes[i], r);
         return `<circle cx="${x}" cy="${y}" r="4.5" class="radar-dot" />`;
       })
       .join("");
 
+    const axisLabels = angles
+      .map((a, i) => {
+        const [x, y] = ponto(a, 1, labelR);
+        return `<text x="${x}" y="${y}" class="radar-axis-label" text-anchor="${anchors[i]}" dominant-baseline="middle">${labels[i]}</text>`;
+      })
+      .join("");
+
     return `
-      <svg viewBox="0 0 240 200" class="result-radar" role="img" aria-label="Gráfico com os três blocos avaliados">
+      <svg viewBox="0 0 320 240" class="result-radar" role="img" aria-label="Gráfico com os três blocos avaliados: ${labels.join(", ")}">
         ${grids}
         ${axisLines}
         <polygon points="${dataPoints}" class="radar-data" />
         ${dots}
+        ${axisLabels}
       </svg>
     `;
   }
@@ -408,6 +419,7 @@
   function renderSelo(pacoteKey) {
     const sealEl = document.getElementById("resultSeal");
     const sealIcon = document.getElementById("sealIcon");
+    const sealLabel = document.getElementById("sealLabel");
     const sealText = document.getElementById("sealText");
 
     sealEl.classList.remove("seal-alert", "seal-positive");
@@ -415,14 +427,16 @@
     if (pacoteKey === "completo") {
       sealEl.classList.add("seal-alert");
       sealIcon.textContent = "!";
-      sealText.innerHTML = "A dor está <strong>espalhada nas 3 frentes</strong> — nenhum ajuste isolado resolve.";
+      sealLabel.textContent = "Dor predominante";
+      sealText.innerHTML = "Espalhada nas <strong>3 frentes</strong>";
       return;
     }
 
     if (pacoteKey === "gfeFixoManutencao") {
       sealEl.classList.add("seal-positive");
       sealIcon.textContent = "✓";
-      sealText.innerHTML = "Nenhuma dor predominante — <strong>base financeira sólida</strong>.";
+      sealLabel.textContent = "Diagnóstico";
+      sealText.innerHTML = "<strong>Base financeira sólida</strong>";
       return;
     }
 
@@ -430,7 +444,8 @@
     const blocoId = blocoPorPacote[pacoteKey];
     sealEl.classList.add("seal-alert");
     sealIcon.textContent = "!";
-    sealText.innerHTML = `Maior dor identificada: <strong>${BLOCO_LABELS[blocoId]}</strong>`;
+    sealLabel.textContent = "Dor predominante";
+    sealText.innerHTML = `<strong>${BLOCO_LABELS[blocoId]}</strong>`;
   }
 
   function renderResultado(pacoteKey, scores) {
@@ -438,7 +453,6 @@
 
     document.getElementById("resultNomePacote").textContent = pacote.nome;
     document.getElementById("resultDescricao").textContent = pacote.descricao;
-    document.getElementById("resultPreco").textContent = pacote.preco;
 
     renderSelo(pacoteKey);
     document.getElementById("resultRadar").innerHTML = buildRadarSVG(scores);
