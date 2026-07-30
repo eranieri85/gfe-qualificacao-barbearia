@@ -8,14 +8,14 @@ window.CONFIG = {
   // Mensagem pré-preenchida enviada no clique do CTA. {{PACOTE}} e {{NOME}} são substituídos automaticamente.
   WHATSAPP_MENSAGEM: "Olá! Fiz o diagnóstico financeiro da minha barbearia e o resultado indicou o pacote \"{{PACOTE}}\". Meu nome é {{NOME}} e gostaria de agendar uma conversa.",
 
-  // URL do Google Apps Script Web App (webhook) que recebe os leads.
+  // URL do projeto Supabase (banco de dados que recebe leads e progresso do funil).
   // Deixe em branco ("") para desativar o envio remoto — o lead ainda é salvo no localStorage do navegador.
-  // Veja instruções de deploy em apps-script/README.md
-  LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/AKfycbydlx60fdokfOPQuoSANxjmNQnsCgQVfA06Uugoh_vbqmqKcoEznK_VSESFX75fBQcT/exec",
+  // Veja detalhes em supabase/README.md
+  SUPABASE_URL: "https://cpoexrxupxeybffyyhwx.supabase.co",
 
-  // Token enviado junto com cada lead para o Apps Script validar antes de gravar na planilha.
-  // Precisa ser IDÊNTICO ao SECRET_TOKEN configurado no Code.gs (veja apps-script/README.md).
-  // Não é sigilo real (qualquer um que abrir o site consegue ver), mas impede que alguém
-  // envie dados falsos direto pro webhook sem nem passar pelo questionário.
-  LEAD_SECRET: "f433d55d0a24ed3e4d33049da0ff10ec0eb2a3e2c1f06f5a",
+  // Chave pública (publishable/anon) do projeto Supabase. É FEITA para ser pública —
+  // ao contrário do token do Apps Script, a segurança real vem das políticas do banco
+  // (RLS + funções SECURITY DEFINER): essa chave só consegue inserir dados, nunca ler,
+  // editar ou apagar nada.
+  SUPABASE_ANON_KEY: "sb_publishable_YHuPKmBpDOMlYAFpoobZOA_H_xL2Nlf",
 };

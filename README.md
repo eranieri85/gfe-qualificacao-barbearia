@@ -9,8 +9,8 @@ Especificação original: `spec-formulario-qualificacao-gfe.md` (não versionada
 - `index.html` — telas do app (intro, captura de lead, questionário, resultado)
 - `style.css` — estilos mobile-first
 - `app.js` — perguntas, cálculo de scores, lógica de recomendação, navegação
-- `config.js` — configurações editáveis: número de WhatsApp e URL do webhook de leads
-- `apps-script/` — código e instruções para receber leads em uma planilha Google Sheets
+- `config.js` — configurações editáveis: número de WhatsApp e credenciais do Supabase
+- `supabase/` — schema SQL e instruções do banco de dados que recebe leads e progresso do funil
 
 ## Rodando localmente
 
@@ -27,7 +27,7 @@ Depois acesse `http://localhost:8791`.
 Edite `config.js`:
 
 1. `WHATSAPP_NUMERO` — número que recebe o CTA final (DDI+DDD+número, só dígitos).
-2. `LEAD_WEBHOOK_URL` — URL do Google Apps Script Web App (veja `apps-script/README.md`).
+2. `SUPABASE_URL` e `SUPABASE_ANON_KEY` — credenciais do projeto Supabase (veja `supabase/README.md`).
 
 ## Cálculo e recomendação
 

@@ -345,7 +345,35 @@
   }
 
   // ============================================================
-  // ENVIO DE LEAD — localStorage sempre; webhook se configurado
+  // SUPABASE — chamadas às funções RPC (registrar_lead / registrar_funil).
+  // A chave pública só tem permissão de EXECUTE nessas duas funções;
+  // não existe acesso direto às tabelas (ver supabase/README.md).
+  // ============================================================
+  function chamarSupabaseRPC(nomeFuncao, params, opts) {
+    if (!(window.CONFIG && CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY)) {
+      return Promise.resolve();
+    }
+
+    return fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/${nomeFuncao}`, {
+      method: "POST",
+      keepalive: Boolean(opts && opts.keepalive),
+      headers: {
+        "Content-Type": "application/json",
+        apikey: CONFIG.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(params),
+    }).then((res) => {
+      if (!res.ok) {
+        return res.text().then((texto) => {
+          throw new Error(`HTTP ${res.status} em ${nomeFuncao}: ${texto}`);
+        });
+      }
+    });
+  }
+
+  // ============================================================
+  // ENVIO DE LEAD — localStorage sempre; Supabase se configurado
   // ============================================================
   function enviarLead(payload) {
     try {
@@ -356,76 +384,58 @@
       console.warn("Não foi possível salvar o lead localmente:", err);
     }
 
-    if (window.CONFIG && CONFIG.LEAD_WEBHOOK_URL) {
-      fetch(CONFIG.LEAD_WEBHOOK_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ ...payload, token: CONFIG.LEAD_SECRET }),
-      }).catch((err) => console.warn("Falha ao enviar lead para o webhook:", err));
-    }
+    chamarSupabaseRPC("registrar_lead", {
+      p_nome: payload.nome,
+      p_whatsapp: payload.whatsapp,
+      p_barbearia: payload.barbearia || null,
+      p_cadeiras: payload.cadeiras || null,
+      p_faturamento: payload.faturamento || null,
+      p_pacote_recomendado: payload.pacoteRecomendado,
+      p_score_organizacao: payload.scores.a01,
+      p_score_precificacao: payload.scores.a23,
+      p_score_estrategia: payload.scores.a45,
+      p_score_geral: payload.scores.overall,
+      p_respostas: payload.respostas,
+    }).catch((err) => console.warn("Falha ao enviar lead para o Supabase:", err));
   }
 
   // ============================================================
   // ANALYTICS DE FUNIL — registra até onde cada sessão avançou no
   // questionário, mesmo que a pessoa nunca chegue ao resultado.
-  //
-  // Só 2-3 chamadas por sessão (início, opcionalmente abandono, conclusão) —
-  // de propósito. Mandar uma chamada a cada pergunta respondida sobrecarrega
-  // o Apps Script (execuções concorrentes disputando o mesmo lock) e faz
-  // requisições serem descartadas silenciosamente sob contenção.
+  // 2-3 chamadas por sessão (início, opcionalmente abandono, conclusão).
+  // O UPSERT em registrar_funil (banco) já garante, atomicamente, que o
+  // progresso só avança e "completou" só vira true — sem lock manual.
   // ============================================================
   function enviarFunil(perguntaAtual, completou) {
-    if (!(window.CONFIG && CONFIG.LEAD_WEBHOOK_URL)) return;
-
-    fetch(CONFIG.LEAD_WEBHOOK_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        evento: "funil",
-        token: CONFIG.LEAD_SECRET,
-        sessionId: state.sessionId,
-        nome: state.lead.nome,
-        whatsapp: state.lead.whatsapp,
-        perguntaAtual,
-        totalPerguntas: QUESTIONS.length,
-        completou,
-      }),
+    chamarSupabaseRPC("registrar_funil", {
+      p_session_id: state.sessionId,
+      p_nome: state.lead.nome,
+      p_whatsapp: state.lead.whatsapp,
+      p_pergunta_atual: perguntaAtual,
+      p_total_perguntas: QUESTIONS.length,
+      p_completou: completou,
     }).catch((err) => console.warn("Falha ao enviar evento de funil:", err));
   }
 
   // Envia o progresso atual quando a pessoa sai da página (troca de aba,
-  // fecha, navega pra fora) sem terminar o questionário.
-  //
-  // Usa fetch com keepalive (não sendBeacon): URLs de Web App do Apps
-  // Script sempre respondem com um redirect (302) antes de executar, e
-  // sendBeacon não segue redirecionamento — a requisição era descartada
-  // no meio do caminho. fetch já segue redirect normalmente (é como o
-  // início/conclusão da sessão funcionam), e keepalive garante que a
-  // requisição sobrevive ao descarte da página, papel que o sendBeacon
-  // cumpriria em um endpoint sem redirect.
+  // fecha, navega pra fora) sem terminar o questionário. keepalive garante
+  // que a requisição sobrevive ao descarte da página.
   function enviarFunilAbandonoBeacon() {
     if (funilFinalizado) return;
     if (!state.sessionId) return; // ainda não chegou a iniciar o questionário
-    if (!(window.CONFIG && CONFIG.LEAD_WEBHOOK_URL)) return;
 
-    fetch(CONFIG.LEAD_WEBHOOK_URL, {
-      method: "POST",
-      mode: "no-cors",
-      keepalive: true,
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        evento: "funil",
-        token: CONFIG.LEAD_SECRET,
-        sessionId: state.sessionId,
-        nome: state.lead.nome,
-        whatsapp: state.lead.whatsapp,
-        perguntaAtual: state.quizIndex,
-        totalPerguntas: QUESTIONS.length,
-        completou: false,
-      }),
-    }).catch((err) => console.warn("Falha ao enviar evento de abandono:", err));
+    chamarSupabaseRPC(
+      "registrar_funil",
+      {
+        p_session_id: state.sessionId,
+        p_nome: state.lead.nome,
+        p_whatsapp: state.lead.whatsapp,
+        p_pergunta_atual: state.quizIndex,
+        p_total_perguntas: QUESTIONS.length,
+        p_completou: false,
+      },
+      { keepalive: true }
+    ).catch((err) => console.warn("Falha ao enviar evento de abandono:", err));
   }
 
   document.addEventListener("visibilitychange", () => {
