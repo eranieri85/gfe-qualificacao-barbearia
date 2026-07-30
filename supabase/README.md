@@ -46,4 +46,26 @@ from public.funil
 where not completou
 group by ultima_pergunta
 order by ultima_pergunta;
+
+-- leads dos últimos 7 dias, mais recentes primeiro
+select created_at, nome, whatsapp, faturamento, pacote_recomendado
+from public.leads
+where created_at >= now() - interval '7 days'
+order by created_at desc;
+
+-- leads filtrados por faixa de faturamento (troque o valor conforme a faixa
+-- que você quer ver: "Até R$ 15.000/mês", "R$ 15.001 a R$ 30.000/mês",
+-- "R$ 30.001 a R$ 60.000/mês", "Acima de R$ 60.000/mês", "Prefiro não informar")
+select created_at, nome, whatsapp, cadeiras, pacote_recomendado
+from public.leads
+where faturamento = 'Acima de R$ 60.000/mês'
+order by created_at desc;
+
+-- leads de maior potencial: faturamento alto + chegaram nos últimos 14 dias
+-- (ajuste o intervalo e a lista de faixas conforme sua definição de "quente")
+select created_at, nome, whatsapp, faturamento, pacote_recomendado
+from public.leads
+where faturamento in ('R$ 30.001 a R$ 60.000/mês', 'Acima de R$ 60.000/mês')
+  and created_at >= now() - interval '14 days'
+order by created_at desc;
 ```
