@@ -31,6 +31,8 @@
     { id: 12, bloco: "45", tipo: "freq", texto: "Você reinveste (equipamento, marketing) com base em número, não em intuição?" },
   ];
 
+  const BLOCO_ORDEM = ["01", "23", "45"];
+
   const PACOTES = {
     diagnostico: {
       nome: "Diagnóstico Financeiro",
@@ -77,8 +79,6 @@
     quiz: document.getElementById("screen-quiz"),
     result: document.getElementById("screen-result"),
   };
-  const progressFill = document.getElementById("progressFill");
-
   function showScreen(name) {
     Object.values(screens).forEach((el) => el.classList.remove("active"));
     screens[name].classList.add("active");
@@ -165,12 +165,32 @@
   const quizCardInner = document.getElementById("quizCardInner");
   const quizSwipeArea = document.getElementById("quizSwipeArea");
 
+  function renderProgressSteps() {
+    BLOCO_ORDEM.forEach((blocoId) => {
+      const perguntasBloco = QUESTIONS.filter((q) => q.bloco === blocoId);
+      const primeiroIdx = QUESTIONS.indexOf(perguntasBloco[0]);
+      const ultimoIdx = QUESTIONS.indexOf(perguntasBloco[perguntasBloco.length - 1]);
+
+      let progresso;
+      if (state.quizIndex > ultimoIdx) progresso = 1;
+      else if (state.quizIndex < primeiroIdx) progresso = 0;
+      else progresso = (state.quizIndex - primeiroIdx) / perguntasBloco.length;
+
+      const fillEl = document.querySelector(`[data-bloco-fill="${blocoId}"]`);
+      fillEl.style.width = `${progresso * 100}%`;
+
+      const stepEl = document.querySelector(`.progress-step[data-bloco="${blocoId}"]`);
+      stepEl.classList.toggle("active", state.quizIndex >= primeiroIdx && state.quizIndex <= ultimoIdx);
+      stepEl.classList.toggle("done", state.quizIndex > ultimoIdx);
+    });
+  }
+
   function renderQuestion(direction) {
     const q = QUESTIONS[state.quizIndex];
     const total = QUESTIONS.length;
 
     qCount.textContent = `Pergunta ${state.quizIndex + 1} de ${total}`;
-    progressFill.style.width = `${(state.quizIndex / total) * 100}%`;
+    renderProgressSteps();
 
     qText.textContent = q.texto;
 
@@ -217,7 +237,9 @@
       state.quizIndex += 1;
       renderQuestion("next");
     } else {
-      progressFill.style.width = "100%";
+      BLOCO_ORDEM.forEach((blocoId) => {
+        document.querySelector(`[data-bloco-fill="${blocoId}"]`).style.width = "100%";
+      });
       finalizarQuestionario();
     }
   }

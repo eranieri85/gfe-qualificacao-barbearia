@@ -6,6 +6,9 @@
 <title>Diagnóstico Financeiro para Barbearias | GFE</title>
 <meta name="description" content="Descubra em 2 minutos onde está a maior dor financeira da sua barbearia e o próximo passo certo para resolver.">
 <link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -64,11 +67,24 @@
     <!-- ===================== TELA 3: QUESTIONÁRIO ===================== -->
     <section class="screen" id="screen-quiz">
       <div class="quiz-nav">
-        <button class="nav-back" id="btnBack" type="button" aria-label="Pergunta anterior">‹</button>
-        <div class="progress-wrap" id="progressWrap">
-          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="quiz-nav-top">
+          <button class="nav-back" id="btnBack" type="button" aria-label="Pergunta anterior">‹</button>
+          <button class="tooltip-btn" id="tooltipBtn" type="button" hidden aria-label="Ajuda">?</button>
         </div>
-        <button class="tooltip-btn" id="tooltipBtn" type="button" hidden aria-label="Ajuda">?</button>
+        <div class="progress-steps" id="progressSteps">
+          <div class="progress-step" data-bloco="01">
+            <span class="progress-step-label">Organização</span>
+            <div class="progress-track"><div class="progress-fill" data-bloco-fill="01"></div></div>
+          </div>
+          <div class="progress-step" data-bloco="23">
+            <span class="progress-step-label">Precificação</span>
+            <div class="progress-track"><div class="progress-fill" data-bloco-fill="23"></div></div>
+          </div>
+          <div class="progress-step" data-bloco="45">
+            <span class="progress-step-label">Estratégia</span>
+            <div class="progress-track"><div class="progress-fill" data-bloco-fill="45"></div></div>
+          </div>
+        </div>
       </div>
       <div class="screen-body quiz-swipe-area" id="quizSwipeArea">
         <div class="quiz-card-inner" id="quizCardInner">
