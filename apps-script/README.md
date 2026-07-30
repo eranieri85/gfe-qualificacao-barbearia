@@ -39,3 +39,13 @@ Se algum dia esse token vazar ou você quiser trocá-lo:
 1. Gere um novo valor aleatório (qualquer string longa serve).
 2. Atualize `SECRET_TOKEN` no `Code.gs` **e** `LEAD_SECRET` no `config.js` com o mesmo valor.
 3. Crie uma nova implantação do Apps Script (passo 4 acima) e publique o site de novo.
+
+## Aba "Funil" — abandono no questionário
+
+Além da aba principal (leads completos), o `Code.gs` cria automaticamente uma segunda aba chamada **Funil** na mesma planilha, na primeira vez que alguém iniciar o questionário. Cada linha é uma sessão (uma tentativa de alguém), atualizada a cada pergunta respondida:
+
+- **Última pergunta respondida** mostra até onde a pessoa foi, mesmo que ela nunca termine.
+- **Completou** mostra "Sim" só quando ela chega ao resultado.
+- **Nome** e **WhatsApp** ficam preenchidos assim que a pessoa passa da tela de captura — então dá pra ver e até contatar manualmente quem começou mas não terminou.
+
+Não precisa configurar nada a mais: a aba é criada sozinha na primeira sessão iniciada após o deploy deste `Code.gs`.

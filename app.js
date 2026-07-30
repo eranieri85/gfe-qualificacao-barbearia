@@ -69,7 +69,13 @@
     lead: { nome: "", whatsapp: "", barbearia: "", cadeiras: "", faturamento: "" },
     respostas: {}, // { [questionId]: valor }
     quizIndex: 0,
+    sessionId: "",
   };
+
+  function gerarSessionId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "sess-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+  }
 
   // ============================================================
   // NAVEGAÇÃO DE TELAS
@@ -148,9 +154,11 @@
     state.lead.cadeiras = leadCadeiras.value.trim();
     state.lead.faturamento = leadFaturamento.value;
 
+    state.sessionId = gerarSessionId();
     state.quizIndex = 0;
     showScreen("quiz");
     renderQuestion();
+    enviarFunil(0, false);
   });
 
   // formatação simples do telefone enquanto digita
@@ -244,14 +252,17 @@
   function selectAnswer(questionId, value) {
     state.respostas[questionId] = value;
     const total = QUESTIONS.length;
+    const perguntaRespondida = state.quizIndex + 1; // posição (1-based) da pergunta recém respondida
 
     if (state.quizIndex < total - 1) {
       state.quizIndex += 1;
       renderQuestion("next");
+      enviarFunil(perguntaRespondida, false);
     } else {
       BLOCO_ORDEM.forEach((blocoId) => {
         document.querySelector(`[data-bloco-fill="${blocoId}"]`).style.width = "100%";
       });
+      enviarFunil(perguntaRespondida, true);
       finalizarQuestionario();
     }
   }
@@ -349,6 +360,30 @@
         body: JSON.stringify({ ...payload, token: CONFIG.LEAD_SECRET }),
       }).catch((err) => console.warn("Falha ao enviar lead para o webhook:", err));
     }
+  }
+
+  // ============================================================
+  // ANALYTICS DE FUNIL — registra até onde cada sessão avançou no
+  // questionário, mesmo que a pessoa nunca chegue ao resultado.
+  // ============================================================
+  function enviarFunil(perguntaAtual, completou) {
+    if (!(window.CONFIG && CONFIG.LEAD_WEBHOOK_URL)) return;
+
+    fetch(CONFIG.LEAD_WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        evento: "funil",
+        token: CONFIG.LEAD_SECRET,
+        sessionId: state.sessionId,
+        nome: state.lead.nome,
+        whatsapp: state.lead.whatsapp,
+        perguntaAtual,
+        totalPerguntas: QUESTIONS.length,
+        completou,
+      }),
+    }).catch((err) => console.warn("Falha ao enviar evento de funil:", err));
   }
 
   // ============================================================
