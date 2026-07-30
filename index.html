@@ -62,6 +62,19 @@
             <span>Quantas cadeiras ativas você tem? <em>(opcional)</em></span>
             <input type="number" id="leadCadeiras" name="cadeiras" inputmode="numeric" min="1" max="50" placeholder="Ex: 3">
           </label>
+
+          <label class="field">
+            <span>Faturamento médio (últimos 3 meses) *</span>
+            <select id="leadFaturamento" name="faturamento" required>
+              <option value="" disabled selected>Selecione uma faixa</option>
+              <option value="Até R$ 15.000/mês">Até R$ 15.000/mês</option>
+              <option value="R$ 15.001 a R$ 30.000/mês">R$ 15.001 a R$ 30.000/mês</option>
+              <option value="R$ 30.001 a R$ 60.000/mês">R$ 30.001 a R$ 60.000/mês</option>
+              <option value="Acima de R$ 60.000/mês">Acima de R$ 60.000/mês</option>
+              <option value="Prefiro não informar">Prefiro não informar</option>
+            </select>
+            <span class="field-error" id="err-leadFaturamento"></span>
+          </label>
         </form>
       </div>
       <div class="screen-actions">

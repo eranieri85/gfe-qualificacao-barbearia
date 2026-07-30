@@ -14,7 +14,7 @@ function doPost(e) {
 
   if (sheet.getLastRow() === 0) {
     sheet.appendRow([
-      "Timestamp", "Nome", "WhatsApp", "Barbearia", "Cadeiras ativas",
+      "Timestamp", "Nome", "WhatsApp", "Barbearia", "Cadeiras ativas", "Faixa de faturamento",
       "Pacote recomendado", "Score Organização", "Score Precificação", "Score Estratégia", "Score Geral",
       "Respostas (JSON)"
     ]);
@@ -31,6 +31,7 @@ function doPost(e) {
     data.whatsapp || "",
     data.barbearia || "",
     data.cadeiras || "",
+    data.faturamento || "",
     data.pacoteRecomendado || "",
     scores.a01 !== undefined ? scores.a01 : "",
     scores.a23 !== undefined ? scores.a23 : "",

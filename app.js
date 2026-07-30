@@ -66,7 +66,7 @@
   // ESTADO
   // ============================================================
   const state = {
-    lead: { nome: "", whatsapp: "", barbearia: "", cadeiras: "" },
+    lead: { nome: "", whatsapp: "", barbearia: "", cadeiras: "", faturamento: "" },
     respostas: {}, // { [questionId]: valor }
     quizIndex: 0,
   };
@@ -100,6 +100,7 @@
   const leadWhats = document.getElementById("leadWhats");
   const leadBarbearia = document.getElementById("leadBarbearia");
   const leadCadeiras = document.getElementById("leadCadeiras");
+  const leadFaturamento = document.getElementById("leadFaturamento");
 
   function setFieldError(input, errId, message) {
     document.getElementById(errId).textContent = message || "";
@@ -132,12 +133,20 @@
       setFieldError(leadWhats, "err-leadWhats", "");
     }
 
+    if (!leadFaturamento.value) {
+      setFieldError(leadFaturamento, "err-leadFaturamento", "Selecione uma faixa de faturamento.");
+      valid = false;
+    } else {
+      setFieldError(leadFaturamento, "err-leadFaturamento", "");
+    }
+
     if (!valid) return;
 
     state.lead.nome = leadNome.value.trim();
     state.lead.whatsapp = leadWhats.value.trim();
     state.lead.barbearia = leadBarbearia.value.trim();
     state.lead.cadeiras = leadCadeiras.value.trim();
+    state.lead.faturamento = leadFaturamento.value;
 
     state.quizIndex = 0;
     showScreen("quiz");
