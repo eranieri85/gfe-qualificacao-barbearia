@@ -79,7 +79,12 @@ function registrarLead(ss, data) {
  * Como várias requisições da mesma sessão podem chegar quase juntas (uma por pergunta
  * respondida), usamos um lock pra serializar a leitura+escrita e evitar corrida: sem
  * isso, duas execuções concorrentes podiam achar que a linha da sessão "ainda não
- * existe" ao mesmo tempo e criar duplicatas, ou uma sobrescrever a atualização da outra.
+ * existe" ao mesmo tempo e criar duplicatas.
+ *
+ * Além disso, essas requisições podem chegar ao servidor fora de ordem (a da pergunta 6
+ * pode processar antes da pergunta 5). Por isso a atualização é monotônica: "Última
+ * pergunta respondida" só avança, nunca regride, e "Completou" só vira Sim, nunca volta
+ * pra Não — assim o resultado final fica correto independente da ordem de chegada.
  */
 function registrarFunil(ss, data) {
   var lock = LockService.getScriptLock();
@@ -109,7 +114,9 @@ function registrarFunil(ss, data) {
     }
 
     var agora = new Date().toISOString();
-    var completouTexto = data.completou ? "Sim" : "Não";
+    var novaPergunta = Number(data.perguntaAtual);
+    if (isNaN(novaPergunta)) novaPergunta = 0;
+    var novoCompletou = !!data.completou;
 
     if (rowIndex === -1) {
       sheet.appendRow([
@@ -118,21 +125,28 @@ function registrarFunil(ss, data) {
         data.whatsapp || "",
         agora,
         agora,
-        data.perguntaAtual !== undefined ? data.perguntaAtual : "",
+        novaPergunta,
         data.totalPerguntas || "",
-        completouTexto,
+        novoCompletou ? "Sim" : "Não",
       ]);
     } else {
-      var inicioOriginal = sheet.getRange(rowIndex, 4).getValue() || agora;
+      var existente = sheet.getRange(rowIndex, 1, 1, 8).getValues()[0];
+      var inicioOriginal = existente[3] || agora;
+      var perguntaExistente = Number(existente[5]) || 0;
+      var completouExistente = existente[7] === "Sim";
+
+      var perguntaFinal = Math.max(novaPergunta, perguntaExistente);
+      var completouFinal = completouExistente || novoCompletou;
+
       sheet.getRange(rowIndex, 1, 1, 8).setValues([[
         sessionId,
-        data.nome || "",
-        data.whatsapp || "",
+        data.nome || existente[1] || "",
+        data.whatsapp || existente[2] || "",
         inicioOriginal,
         agora,
-        data.perguntaAtual !== undefined ? data.perguntaAtual : "",
-        data.totalPerguntas || "",
-        completouTexto,
+        perguntaFinal,
+        data.totalPerguntas || existente[6] || "",
+        completouFinal ? "Sim" : "Não",
       ]]);
     }
   } finally {
