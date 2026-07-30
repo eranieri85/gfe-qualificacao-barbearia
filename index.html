@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Diagnóstico Financeiro para Barbearias | GFE</title>
+<meta name="description" content="Descubra em 2 minutos onde está a maior dor financeira da sua barbearia e o próximo passo certo para resolver.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- barra de progresso -->
+  <div class="progress-wrap" id="progressWrap" hidden>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="progress-label" id="progressLabel"></span>
+  </div>
+
+  <main id="app">
+
+    <!-- ===================== TELA 1: INTRO ===================== -->
+    <section class="screen active" id="screen-intro">
+      <div class="card intro-card">
+        <span class="eyebrow">Diagnóstico gratuito · 2 minutos</span>
+        <h1>Sua barbearia está perdendo dinheiro sem você ver onde?</h1>
+        <p class="subtitle">Responda 12 perguntas rápidas sobre a gestão financeira do seu negócio e descubra, na hora, qual é a sua maior dor financeira e o próximo passo certo para resolvê-la.</p>
+        <ul class="bullet-list">
+          <li>Leva menos de 2 minutos</li>
+          <li>Resultado personalizado na tela</li>
+          <li>Sem compromisso</li>
+        </ul>
+        <button class="btn btn-primary btn-block" id="btnStart">Começar diagnóstico</button>
+      </div>
+    </section>
+
+    <!-- ===================== TELA 2: CAPTURA DE LEAD ===================== -->
+    <section class="screen" id="screen-lead">
+      <div class="card">
+        <span class="eyebrow">Antes de começar</span>
+        <h2>Para onde enviamos o seu resultado?</h2>
+        <p class="subtitle">Leva 10 segundos.</p>
+
+        <form id="leadForm" novalidate>
+          <label class="field">
+            <span>Seu nome *</span>
+            <input type="text" id="leadNome" name="nome" autocomplete="name" required placeholder="Como podemos te chamar?">
+            <span class="field-error" id="err-leadNome"></span>
+          </label>
+
+          <label class="field">
+            <span>WhatsApp *</span>
+            <input type="tel" id="leadWhats" name="whatsapp" inputmode="tel" autocomplete="tel" required placeholder="(11) 99999-9999">
+            <span class="field-error" id="err-leadWhats"></span>
+          </label>
+
+          <label class="field">
+            <span>Nome da barbearia <em>(opcional)</em></span>
+            <input type="text" id="leadBarbearia" name="barbearia" placeholder="Nome do seu negócio">
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-block">Iniciar questionário</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===================== TELA 3: QUESTIONÁRIO ===================== -->
+    <section class="screen" id="screen-quiz">
+      <div class="card quiz-card">
+        <div class="quiz-header">
+          <span class="q-count" id="qCount">Pergunta 1 de 12</span>
+          <button class="tooltip-btn" id="tooltipBtn" type="button" hidden aria-label="Ajuda">?</button>
+        </div>
+        <p class="tooltip-box" id="tooltipBox" hidden></p>
+        <h2 class="q-text" id="qText"></h2>
+        <div class="q-options" id="qOptions"></div>
+        <button class="btn btn-ghost" id="btnBack" type="button">← Voltar</button>
+      </div>
+    </section>
+
+    <!-- ===================== TELA 4: RESULTADO ===================== -->
+    <section class="screen" id="screen-result">
+      <div class="card result-card">
+        <span class="eyebrow" id="resultEyebrow">Seu diagnóstico está pronto</span>
+        <h2 id="resultNomePacote"></h2>
+        <p class="result-desc" id="resultDescricao"></p>
+        <div class="result-price" id="resultPreco"></div>
+
+        <div class="result-scores" id="resultScores"></div>
+
+        <a class="btn btn-primary btn-block" id="btnWhats" href="#" target="_blank" rel="noopener">Agendar conversa no WhatsApp</a>
+        <button class="btn btn-ghost btn-block" id="btnRestart" type="button">Refazer diagnóstico</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">GFE — Gestão Financeira Empresarial</footer>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
