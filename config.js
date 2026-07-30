@@ -12,4 +12,10 @@ window.CONFIG = {
   // Deixe em branco ("") para desativar o envio remoto — o lead ainda é salvo no localStorage do navegador.
   // Veja instruções de deploy em apps-script/README.md
   LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/AKfycbydlx60fdokfOPQuoSANxjmNQnsCgQVfA06Uugoh_vbqmqKcoEznK_VSESFX75fBQcT/exec",
+
+  // Token enviado junto com cada lead para o Apps Script validar antes de gravar na planilha.
+  // Precisa ser IDÊNTICO ao SECRET_TOKEN configurado no Code.gs (veja apps-script/README.md).
+  // Não é sigilo real (qualquer um que abrir o site consegue ver), mas impede que alguém
+  // envie dados falsos direto pro webhook sem nem passar pelo questionário.
+  LEAD_SECRET: "f433d55d0a24ed3e4d33049da0ff10ec0eb2a3e2c1f06f5a",
 };
