@@ -77,15 +77,11 @@
     quiz: document.getElementById("screen-quiz"),
     result: document.getElementById("screen-result"),
   };
-  const progressWrap = document.getElementById("progressWrap");
   const progressFill = document.getElementById("progressFill");
-  const progressLabel = document.getElementById("progressLabel");
 
   function showScreen(name) {
     Object.values(screens).forEach((el) => el.classList.remove("active"));
     screens[name].classList.add("active");
-    progressWrap.hidden = name !== "quiz";
-    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
 
   // ============================================================
@@ -166,14 +162,15 @@
   const tooltipBtn = document.getElementById("tooltipBtn");
   const tooltipBox = document.getElementById("tooltipBox");
   const btnBack = document.getElementById("btnBack");
+  const quizCardInner = document.getElementById("quizCardInner");
+  const quizSwipeArea = document.getElementById("quizSwipeArea");
 
-  function renderQuestion() {
+  function renderQuestion(direction) {
     const q = QUESTIONS[state.quizIndex];
     const total = QUESTIONS.length;
 
     qCount.textContent = `Pergunta ${state.quizIndex + 1} de ${total}`;
     progressFill.style.width = `${(state.quizIndex / total) * 100}%`;
-    progressLabel.textContent = `${state.quizIndex} de ${total} respondidas`;
 
     qText.textContent = q.texto;
 
@@ -199,6 +196,13 @@
     });
 
     btnBack.style.visibility = state.quizIndex === 0 ? "hidden" : "visible";
+
+    quizCardInner.classList.remove("enter-next", "enter-prev");
+    if (direction) {
+      // força reflow para reiniciar a animação mesmo em cliques consecutivos
+      void quizCardInner.offsetWidth;
+      quizCardInner.classList.add(direction === "back" ? "enter-prev" : "enter-next");
+    }
   }
 
   tooltipBtn.addEventListener("click", () => {
@@ -211,20 +215,38 @@
 
     if (state.quizIndex < total - 1) {
       state.quizIndex += 1;
-      renderQuestion();
+      renderQuestion("next");
     } else {
       progressFill.style.width = "100%";
-      progressLabel.textContent = `${total} de ${total} respondidas`;
       finalizarQuestionario();
     }
   }
 
-  btnBack.addEventListener("click", () => {
+  function goBack() {
     if (state.quizIndex > 0) {
       state.quizIndex -= 1;
-      renderQuestion();
+      renderQuestion("back");
     }
-  });
+  }
+
+  btnBack.addEventListener("click", goBack);
+
+  // gesto de swipe: arrastar para a direita volta para a pergunta anterior
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  quizSwipeArea.addEventListener("touchstart", (e) => {
+    touchStartX = e.changedTouches[0].clientX;
+    touchStartY = e.changedTouches[0].clientY;
+  }, { passive: true });
+
+  quizSwipeArea.addEventListener("touchend", (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (dx > 70 && Math.abs(dy) < 60) {
+      goBack();
+    }
+  }, { passive: true });
 
   // ============================================================
   // CÁLCULO E RECOMENDAÇÃO
